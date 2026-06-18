@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CLAUDE.md Builder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e10;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a32;
+    --accent: #c9a96e;
+    --accent2: #7c6fcd;
+    --text: #e8e6e0;
+    --text-dim: #888;
+    --text-muted: #555;
+    --green: #4ade80;
+    --red: #f87171;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .shell {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* HEADER */
+  .header {
+    margin-bottom: 48px;
+  }
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  h1 span { color: var(--accent); }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 15px;
+    max-width: 540px;
+  }
+
+  /* PROGRESS */
+  .progress-bar {
+    display: flex;
+    gap: 4px;
+    margin: 32px 0 40px;
+  }
+  .progress-seg {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+  .progress-seg.done { background: var(--accent); }
+  .progress-seg.active { background: var(--accent2); }
+
+  /* STEP INDICATOR */
+  .step-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .step-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .step-desc {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  /* CARDS / OPTION SELECTORS */
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .option-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    user-select: none;
+  }
+  .option-card:hover { border-color: var(--accent2); background: var(--surface2); }
+  .option-card.selected { border-color: var(--accent); background: var(--surface2); }
+  .option-card .card-icon { font-size: 22px; margin-bottom: 8px; }
+  .option-card .card-label { font-weight: 500; font-size: 14px; color: var(--text); }
+  .option-card .card-desc { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  /* QUESTIONS */
+  .question-block {
+    margin-bottom: 24px;
+  }
+  .q-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .q-label .required { color: var(--accent); font-size: 11px; }
+  .q-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 12px 14px;
+    resize: vertical;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  textarea { min-height: 80px; }
+  textarea:focus, input[type="text"]:focus { border-color: var(--accent2); }
+  textarea::placeholder, input::placeholder { color: var(--text-muted); }
+
+  /* CALLOUT BOX */
+  .callout {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .callout strong { color: var(--accent); }
+
+  /* TOGGLE ROW */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .toggle-row:hover { border-color: var(--accent2); }
+  .toggle-row.on { border-color: var(--accent); }
+  .toggle-label { font-size: 14px; font-weight: 500; }
+  .toggle-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .toggle-pill {
+    width: 40px; height: 22px;
+    background: var(--border);
+    border-radius: 11px;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-pill::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .toggle-row.on .toggle-pill { background: var(--accent); }
+  .toggle-row.on .toggle-pill::after { transform: translateX(18px); background: var(--bg); }
+
+  /* BUTTONS */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+  }
+  .btn {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1.5px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+  .btn-accent2 { background: var(--accent2); color: #fff; }
+
+  /* OUTPUT */
+  .output-box {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .output-header span {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .copy-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .copy-btn:hover { opacity: 0.85; }
+  .output-content {
+    padding: 20px 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #b8b4a8;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 520px;
+    overflow-y: auto;
+  }
+
+  /* SECTION DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 36px 0;
+  }
+
+  /* MANDATORY RULES SECTION */
+  .rules-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .rule-item {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .rule-item strong { color: var(--green); display: block; margin-bottom: 4px; font-size: 13px; }
+
+  /* HIDDEN */
+  .hidden { display: none; }
+
+  /* SUCCESS */
+  .success-banner {
+    background: linear-gradient(135deg, #1a1f14, #161a1a);
+    border: 1.5px solid var(--green);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 28px;
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+  .success-banner strong { color: var(--green); font-size: 16px; display: block; margin-bottom: 6px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="eyebrow">Art Meets Algorithm · by Ankita Biswas</div>
+    <h1>Build your <span>CLAUDE.md</span></h1>
+    <p class="subtitle">A step-by-step guide that asks you everything Claude needs to know about you — so it stops being generic and starts being useful.</p>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar" id="progressBar"></div>
+
+  <!-- STEP CONTAINER -->
+  <div id="stepContainer"></div>
+
+</div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────
+const state = {
+  userType: null,
+  answers: {},
+  toggles: {},
+  step: 0
+};
+
+// ─── USER TYPES ───────────────────────────────────────────
+const userTypes = [
+  { id: 'developer', icon: '💻', label: 'Developer / Technical', desc: 'Coding projects, repos, tech stacks' },
+  { id: 'creative', icon: '✦', label: 'Creative Professional', desc: 'Brand, design, writing, strategy' },
+  { id: 'business', icon: '⬡', label: 'Business Owner', desc: 'Operations, marketing, team management' },
+  { id: 'student', icon: '◎', label: 'Student / Researcher', desc: 'Academic work, research, learning' },
+  { id: 'personal', icon: '◈', label: 'Personal Use', desc: 'Life admin, goals, general assistant' },
+];
+
+// ─── STEPS CONFIG ─────────────────────────────────────────
+function getSteps() {
+  const base = [
+    {
+      id: 'type',
+      title: 'Who are you?',
+      desc: 'This shapes every question that follows. Pick what fits closest.',
+      type: 'usertype'
+    },
+    {
+      id: 'identity',
+      title: 'The basics',
+      desc: 'Facts Claude should always know about you.',
+      type: 'questions',
+      questions: [
+        { id: 'name', label: 'What should Claude call you?', hint: 'Casual name, formal name, or both. e.g. "Ann casually, Ankita in serious conversations."', required: true },
+        { id: 'location', label: 'Where are you based?', hint: 'City and country. Affects local context, timezone, currency references.' },
+        { id: 'languages', label: 'What languages do you work in?', hint: 'Primary language first. Any you\'re learning?' },
+      ]
+    },
+    {
+      id: 'devices',
+      title: 'Your setup',
+      desc: 'So Claude never gives you instructions for the wrong system.',
+      type: 'questions',
+      questions: [
+        { id: 'devices', label: 'What devices and OS do you use?', hint: 'e.g. MacBook on macOS Sequoia, iPhone 14 on iOS 26.5', required: true },
+        { id: 'tech_level', label: 'How technical are you?', hint: 'e.g. "Comfortable with no-code tools. Not comfortable with terminal or Python. Teach me step by step."' },
+        { id: 'tools', label: 'What tools do you use regularly?', hint: 'Apps, platforms, software you want Claude to be aware of.' },
+      ]
+    },
+  ];
+
+  const byType = {
+    developer: [
+      {
+        id: 'project',
+        title: 'Project & tech stack',
+        desc: 'Claude needs to know what it\'s working inside.',
+        type: 'questions',
+        questions: [
+          { id: 'project_desc', label: 'What does your project do?', hint: 'Plain language. What it is, who it\'s for, what problem it solves.', required: true, big: true },
+          { id: 'stack', label: 'Tech stack', hint: 'Frameworks, libraries, databases, languages. Be exact.', required: true },
+          { id: 'avoid', label: 'What should Claude never use or suggest?', hint: 'Libraries, patterns, or approaches you\'ve ruled out.' },
+          { id: 'file_structure', label: 'Key file structure or directory rules', hint: 'e.g. "API routes go in /src/app/api. Components in /src/components."', big: true },
+        ]
+      },
+      {
+        id: 'workflow',
+        title: 'How you build',
+        desc: 'Your development workflow, preferences, and quality bar.',
+        type: 'questions',
+        questions: [
+          { id: 'workflow', label: 'Describe your dev workflow', hint: 'e.g. Plan → Write tests (TDD) → Implement → Verify. Or something else entirely.', big: true },
+          { id: 'testing', label: 'Testing preferences', hint: 'Unit vs integration? Coverage expectations? Frameworks?' },
+          { id: 'commands', label: 'Key terminal commands Claude should know', hint: 'Setup, run server, run tests. Include exact commands.', big: true },
+          { id: 'gotchas', label: 'Critical gotchas and exclusions', hint: 'Things Claude must never touch, hardcode, or expose. e.g. "Never expose API keys. Never modify /data/raw."', big: true },
+        ]
+      }
+    ],
+    creative: [
+      {
+        id: 'work',
+        title: 'Your creative work',
+        desc: 'What you do and how you do it.',
+        type: 'questions',
+        questions: [
+          { id: 'role', label: 'What\'s your role or craft?', hint: 'e.g. Brand strategist, copywriter, art director, content creator.', required: true },
+          { id: 'industry', label: 'Industries or sectors you work in', hint: 'The more specific, the better Claude can contextualise.' },
+          { id: 'clients', label: 'Who do you make work for?', hint: 'Clients, employers, your own brand? What kinds of audiences?' },
+          { id: 'metrics', label: 'Key metrics or proof points', hint: 'Achievements Claude should know. e.g. 300K impressions, 32% lead increase.' },
+        ]
+      },
+      {
+        id: 'voice',
+        title: 'Your voice',
+        desc: 'How you write and how you want Claude to write for you.',
+        type: 'questions',
+        questions: [
+          { id: 'voice_desc', label: 'Describe your writing voice', hint: 'Tone, rhythm, personality. What makes your writing yours?', big: true, required: true },
+          { id: 'voice_dont', label: 'What should Claude never write like?', hint: 'Phrases, styles, or tones to avoid completely.' },
+          { id: 'voice_example', label: 'Paste a sentence you\'ve written that sounds like you', hint: 'Even one line helps calibrate the voice more than any description.', big: true },
+        ]
+      }
+    ],
+    business: [
+      {
+        id: 'biz',
+        title: 'Your business',
+        desc: 'Context Claude needs to give relevant advice.',
+        type: 'questions',
+        questions: [
+          { id: 'biz_desc', label: 'What does your business do?', hint: 'Plain language. What you sell, who buys it, how you make money.', required: true, big: true },
+          { id: 'biz_stage', label: 'Stage of the business', hint: 'e.g. Pre-revenue, early-stage, established, scaling, exit-planning.' },
+          { id: 'biz_tools', label: 'Tools and systems you run on', hint: 'CRM, project management, comms, finance tools.' },
+          { id: 'biz_goals', label: 'Current priorities', hint: 'What are you trying to solve or achieve right now?' },
+        ]
+      }
+    ],
+    student: [
+      {
+        id: 'study',
+        title: 'Your academic context',
+        desc: 'So Claude can support your work without getting it wrong.',
+        type: 'questions',
+        questions: [
+          { id: 'program', label: 'Program and institution', hint: 'Degree, year, university.', required: true },
+          { id: 'subjects', label: 'Current modules or subjects', hint: 'What are you studying right now?' },
+          { id: 'deadlines', label: 'Upcoming deadlines or commitments', hint: 'What\'s most urgent?' },
+          { id: 'citation', label: 'Citation style or academic rules', hint: 'e.g. Harvard, APA, or any specific institutional rules Claude should follow.' },
+        ]
+      }
+    ],
+    personal: [
+      {
+        id: 'life',
+        title: 'Your life context',
+        desc: 'What Claude should know to be useful day to day.',
+        type: 'questions',
+        questions: [
+          { id: 'life_goals', label: 'What are you working toward right now?', hint: 'Short-term and long-term. Anything Claude can help track or support.', big: true, required: true },
+          { id: 'routines', label: 'Daily habits or routines you want Claude to support', hint: 'e.g. remind me to drink water, ask if I\'ve journaled, check my step count.' },
+          { id: 'interests', label: 'Interests and passions', hint: 'What you care about. Shapes how Claude frames examples and conversations.' },
+        ]
+      }
+    ]
+  };
+
+  const shared = [
+    {
+      id: 'goals',
+      title: 'What you\'re working toward',
+      desc: 'Short-term and long-term. Claude holds this as context across everything.',
+      type: 'questions',
+      questions: [
+        { id: 'short_goal', label: 'Short-term goal (weeks to months)', hint: 'What\'s most urgent right now?', required: true },
+        { id: 'long_goal', label: 'Long-term goal (1-3 years)', hint: 'Where are you trying to get to?' },
+        { id: 'not_goal', label: 'What are you NOT trying to do?', hint: 'Rules Claude out of suggesting paths that don\'t fit.' },
+      ]
+    },
+    {
+      id: 'behaviour',
+      title: 'How Claude should behave',
+      desc: 'The rules that apply to every single conversation.',
+      type: 'toggles',
+      toggles: [
+        { id: 'pushback', label: 'Push back on my ideas', sub: 'Ask why. Request data. Don\'t just agree.' },
+        { id: 'grounded', label: 'Keep me grounded in reality', sub: 'Optimistic but factual. No delulu.' },
+        { id: 'solutions', label: 'Always be solution-oriented', sub: 'Give options, not just problems.' },
+        { id: 'teach', label: 'Teach me along the way', sub: 'Explain the why, not just the what.' },
+        { id: 'nudge', label: 'Nudge me about habits mid-conversation', sub: 'Water, food, movement, whatever I specify.' },
+        { id: 'spiral', label: 'Name the spiral pattern if you see it', sub: 'Flag when I\'m seeking frameworks instead of moving forward.' },
+      ]
+    },
+    {
+      id: 'nevers',
+      title: 'Hard limits',
+      desc: 'What Claude must never do. Non-negotiable.',
+      type: 'questions',
+      questions: [
+        { id: 'never_do', label: 'What should Claude never do, say, or assume?', hint: 'The stuff that makes you close the tab. Be specific.', big: true, required: true },
+        { id: 'never_tone', label: 'Tones or styles Claude should never use', hint: 'e.g. Never be condescending. Never use corporate jargon. Never be sycophantic.' },
+      ]
+    },
+    {
+      id: 'naming',
+      title: 'The Canary rule',
+      desc: 'The most underused prompting technique. This is how you prevent context rot.',
+      type: 'canary'
+    },
+    {
+      id: 'generate',
+      title: 'Generate your CLAUDE.md',
+      desc: 'Review your inputs and generate the file.',
+      type: 'generate'
+    }
+  ];
+
+  const typeSteps = byType[state.userType] || [];
+  return [...base, ...typeSteps, ...shared];
+}
+
+// ─── RENDER ENGINE ────────────────────────────────────────
+function render() {
+  const steps = getSteps();
+  const step = steps[state.step];
+  renderProgress(steps);
+  renderStep(step, steps);
+}
+
+function renderProgress(steps) {
+  const bar = document.getElementById('progressBar');
+  bar.innerHTML = steps.map((_, i) => {
+    let cls = 'progress-seg';
+    if (i < state.step) cls += ' done';
+    if (i === state.step) cls += ' active';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+}
+
+function renderStep(step, steps) {
+  const container = document.getElementById('stepContainer');
+
+  let html = `
+    <div class="step-label">Step ${state.step + 1} of ${steps.length}</div>
+    <div class="step-title">${step.title}</div>
+    <div class="step-desc">${step.desc}</div>
+  `;
+
+  if (step.type === 'usertype') {
+    html += `<div class="options-grid">` +
+      userTypes.map(t => `
+        <div class="option-card ${state.userType === t.id ? 'selected' : ''}" onclick="selectType('${t.id}')">
+          <div class="card-icon">${t.icon}</div>
+          <div class="card-label">${t.label}</div>
+          <div class="card-desc">${t.desc}</div>
+        </div>
+      `).join('') +
+    `</div>`;
+  }
+
+  else if (step.type === 'questions') {
+    step.questions.forEach(q => {
+      html += `<div class="question-block">
+        <div class="q-label">${q.label} ${q.required ? '<span class="required">required</span>' : ''}</div>
+        ${q.hint ? `<div class="q-hint">${q.hint}</div>` : ''}
+        ${q.big
+          ? `<textarea id="q_${q.id}" placeholder="Type here...">${state.answers[q.id] || ''}</textarea>`
+          : `<input type="text" id="q_${q.id}" placeholder="Type here..." value="${state.answers[q.id] || ''}">`
+        }
+      </div>`;
+    });
+  }
+
+  else if (step.type === 'toggles') {
+    html += `<div class="rules-list">` +
+      step.toggles.map(t => `
+        <div class="toggle-row ${state.toggles[t.id] ? 'on' : ''}" onclick="toggleRule('${t.id}')">
+          <div>
+            <div class="toggle-label">${t.label}</div>
+            <div class="toggle-sub">${t.sub}</div>
+          </div>
+          <div class="toggle-pill"></div>
+        </div>
+      `).join('') +
+    `</div>`;
+  }
+
+  else if (step.type === 'canary') {
+    html += `
+      <div class="callout">
+        <strong>What is the Canary Method?</strong><br><br>
+        As your conversation with Claude gets longer, it starts to forget your rules — this is called <em>context rot</em>. The Canary Method is an early-warning system.<br><br>
+        By making Claude start every message with your name, you can instantly tell when it's drifted — because the first sign of context rot is that it stops using your name.<br><br>
+        <strong>The rule to add to your CLAUDE.md:</strong><br>
+        <em>"Rule: When outputting a message, you must start it by calling me by my name, [Your Name]. Use [casual name] in normal conversation. Use [full name] when the conversation is serious or when you need me to pay close attention to what you're about to say."</em>
+      </div>
+      <div class="question-block">
+        <div class="q-label">Your casual name <span class="required">required</span></div>
+        <div class="q-hint">What Claude calls you day to day. e.g. Ann, Kita, Jay.</div>
+        <input type="text" id="q_casual_name" placeholder="e.g. Kita" value="${state.answers['casual_name'] || ''}">
+      </div>
+      <div class="question-block">
+        <div class="q-label">Your serious/full name</div>
+        <div class="q-hint">What Claude uses when it really needs your attention. e.g. Ankita, Jonathan.</div>
+        <input type="text" id="q_serious_name" placeholder="e.g. Ankita" value="${state.answers['serious_name'] || ''}">
+      </div>
+      <div class="question-block">
+        <div class="q-label">What name did you give Claude?</div>
+        <div class="q-hint">Optional. If you've named your Claude, put it here. It creates a relationship, not just a tool.</div>
+        <input type="text" id="q_claude_name" placeholder="e.g. Andréas" value="${state.answers['claude_name'] || ''}">
+      </div>
+    `;
+  }
+
+  else if (step.type === 'generate') {
+    const md = generateMarkdown();
+    html += `
+      <div class="success-banner">
+        <strong>✓ Your CLAUDE.md is ready.</strong>
+        Copy the file below and paste it into a new Claude conversation as your first message, or save it as CLAUDE.md in your repo root.
+      </div>
+      <div class="output-box">
+        <div class="output-header">
+          <span>CLAUDE.md</span>
+          <button class="copy-btn" onclick="copyOutput()">Copy file</button>
+        </div>
+        <div class="output-content" id="outputContent">${escapeHtml(md)}</div>
+      </div>
+      <hr class="divider">
+      <div class="callout">
+        <strong>How to use this file</strong><br><br>
+        <strong>In Claude.ai:</strong> Paste the contents as your very first message in a new conversation. Claude reads it as context before responding.<br><br>
+        <strong>In a repo (Claude Code):</strong> Save as <code>CLAUDE.md</code> in your project root. Claude Code reads it automatically.<br><br>
+        <strong>Keep it alive:</strong> Update when major facts change — job, location, goals, tech stack. A stale CLAUDE.md is worse than none.
+      </div>
+    `;
+  }
+
+  // NAV BUTTONS
+  html += `<div class="btn-row">`;
+  if (state.step > 0) {
+    html += `<button class="btn btn-ghost" onclick="goBack()">← Back</button>`;
+  }
+  if (step.type !== 'generate') {
+    html += `<button class="btn btn-primary" onclick="goNext()">Continue →</button>`;
+  } else {
+    html += `<button class="btn btn-accent2" onclick="restart()">Start over</button>`;
+  }
+  html += `</div>`;
+
+  container.innerHTML = html;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── ACTIONS ──────────────────────────────────────────────
+function selectType(id) {
+  state.userType = id;
+  render();
+}
+
+function toggleRule(id) {
+  state.toggles[id] = !state.toggles[id];
+  render();
+}
+
+function saveCurrentAnswers() {
+  const steps = getSteps();
+  const step = steps[state.step];
+  if (step.type === 'questions') {
+    step.questions.forEach(q => {
+      const el = document.getElementById('q_' + q.id);
+      if (el) state.answers[q.id] = el.value.trim();
+    });
+  }
+  if (step.type === 'canary') {
+    ['casual_name','serious_name','claude_name'].forEach(k => {
+      const el = document.getElementById('q_' + k);
+      if (el) state.answers[k] = el.value.trim();
+    });
+  }
+}
+
+function goNext() {
+  saveCurrentAnswers();
+  const steps = getSteps();
+  if (state.step === 0 && !state.userType) {
+    alert('Please select who you are first.');
+    return;
+  }
+  if (state.step < steps.length - 1) {
+    state.step++;
+    render();
+  }
+}
+
+function goBack() {
+  saveCurrentAnswers();
+  if (state.step > 0) {
+    state.step--;
+    render();
+  }
+}
+
+function restart() {
+  state.userType = null;
+  state.answers = {};
+  state.toggles = {};
+  state.step = 0;
+  render();
+}
+
+// ─── MARKDOWN GENERATOR ───────────────────────────────────
+function generateMarkdown() {
+  const a = state.answers;
+  const t = state.toggles;
+  const casualName = a.casual_name || 'User';
+  const seriousName = a.serious_name || casualName;
+  const claudeName = a.claude_name ? `You are **${a.claude_name}**.` : 'You are Claude, a personal AI assistant.';
+  const typeLabel = userTypes.find(u => u.id === state.userType)?.label || '';
+
+  let md = `# CLAUDE.md\n`;
+  md += `*Read this fully before responding to anything.*\n\n`;
+  md += `---\n\n`;
+
+  // CANARY RULE — first, always
+  md += `## ⚡ Canary Rule (read first)\n\n`;
+  md += `**Rule: Every message must begin by addressing me by name.**\n\n`;
+  md += `Use **${casualName}** in normal conversation.\n`;
+  md += `Use **${seriousName}** when the conversation is serious, or when you need me to stop and pay close attention to what you're about to say.\n\n`;
+  md += `*Why this matters: if you stop using my name, it's a signal that you've lost context of these rules. The name is the canary in the coal mine.*\n\n`;
+  md += `---\n\n`;
+
+  // IDENTITY
+  md += `## Who ${claudeName}\n\n`;
+  md += `${claudeName}\n\n`;
+  if (a.name) md += `**My name:** ${a.name}\n`;
+  if (a.location) md += `**Location:** ${a.location}\n`;
+  if (a.languages) md += `**Languages:** ${a.languages}\n`;
+  md += `**Context type:** ${typeLabel}\n\n`;
+  md += `---\n\n`;
+
+  // DEVICES
+  if (a.devices || a.tech_level || a.tools) {
+    md += `## Setup\n\n`;
+    if (a.devices) md += `**Devices:** ${a.devices}\n`;
+    if (a.tech_level) md += `**Tech level:** ${a.tech_level}\n`;
+    if (a.tools) md += `**Tools I use:** ${a.tools}\n`;
+    md += `\n*Always give instructions specific to my devices and OS. Never assume terminal or coding knowledge unless stated above.*\n\n`;
+    md += `---\n\n`;
+  }
+
+  // TYPE-SPECIFIC
+  if (state.userType === 'developer') {
+    if (a.project_desc || a.stack) {
+      md += `## Project\n\n`;
+      if (a.project_desc) md += `**What it does:** ${a.project_desc}\n\n`;
+      if (a.stack) md += `**Tech stack:** ${a.stack}\n\n`;
+      if (a.avoid) md += `**Never use or suggest:** ${a.avoid}\n\n`;
+      if (a.file_structure) md += `**File structure rules:**\n${a.file_structure}\n\n`;
+      md += `---\n\n`;
+    }
+    if (a.workflow || a.testing || a.commands || a.gotchas) {
+      md += `## Development Workflow\n\n`;
+      if (a.workflow) md += `**Workflow:** ${a.workflow}\n\n`;
+      if (a.testing) md += `**Testing:** ${a.testing}\n\n`;
+      if (a.commands) md += `**Key commands:**\n\`\`\`\n${a.commands}\n\`\`\`\n\n`;
+      if (a.gotchas) md += `**Critical rules / gotchas:**\n${a.gotchas}\n\n`;
+      md += `---\n\n`;
+    }
+  }
+
+  if (state.userType === 'creative') {
+    if (a.role || a.industry || a.clients || a.metrics) {
+      md += `## My Work\n\n`;
+      if (a.role) md += `**Role:** ${a.role}\n`;
+      if (a.industry) md += `**Industries:** ${a.industry}\n`;
+      if (a.clients) md += `**Audience / clients:** ${a.clients}\n`;
+      if (a.metrics) md += `**Key metrics:** ${a.metrics}\n`;
+      md += `\n---\n\n`;
+    }
+    if (a.voice_desc || a.voice_dont || a.voice_example) {
+      md += `## My Voice\n\n`;
+      if (a.voice_desc) md += `**Voice description:** ${a.voice_desc}\n\n`;
+      if (a.voice_dont) md += `**Never write like:** ${a.voice_dont}\n\n`;
+      if (a.voice_example) md += `**Example of my voice:**\n> ${a.voice_example}\n\n`;
+      md += `---\n\n`;
+    }
+  }
+
+  if (state.userType === 'business') {
+    if (a.biz_desc || a.biz_stage || a.biz_tools || a.biz_goals) {
+      md += `## My Business\n\n`;
+      if (a.biz_desc) md += `**What it does:** ${a.biz_desc}\n\n`;
+      if (a.biz_stage) md += `**Stage:** ${a.biz_stage}\n`;
+      if (a.biz_tools) md += `**Tools:** ${a.biz_tools}\n`;
+      if (a.biz_goals) md += `**Current priorities:** ${a.biz_goals}\n`;
+      md += `\n---\n\n`;
+    }
+  }
+
+  if (state.userType === 'student') {
+    if (a.program || a.subjects || a.deadlines || a.citation) {
+      md += `## Academic Context\n\n`;
+      if (a.program) md += `**Program:** ${a.program}\n`;
+      if (a.subjects) md += `**Current subjects:** ${a.subjects}\n`;
+      if (a.deadlines) md += `**Upcoming deadlines:** ${a.deadlines}\n`;
+      if (a.citation) md += `**Citation style:** ${a.citation}\n`;
+      md += `\n---\n\n`;
+    }
+  }
+
+  if (state.userType === 'personal') {
+    if (a.life_goals || a.routines || a.interests) {
+      md += `## Life Context\n\n`;
+      if (a.life_goals) md += `**Working toward:** ${a.life_goals}\n\n`;
+      if (a.routines) md += `**Habits to support:** ${a.routines}\n\n`;
+      if (a.interests) md += `**Interests:** ${a.interests}\n\n`;
+      md += `---\n\n`;
+    }
+  }
+
+  // GOALS
+  if (a.short_goal || a.long_goal || a.not_goal) {
+    md += `## Goals\n\n`;
+    if (a.short_goal) md += `**Short-term:** ${a.short_goal}\n\n`;
+    if (a.long_goal) md += `**Long-term:** ${a.long_goal}\n\n`;
+    if (a.not_goal) md += `**Not trying to:** ${a.not_goal}\n\n`;
+    md += `---\n\n`;
+  }
+
+  // BEHAVIOUR RULES
+  const activeToggles = Object.entries(t).filter(([,v]) => v);
+  if (activeToggles.length > 0) {
+    md += `## How to Behave\n\n`;
+    const toggleLabels = {
+      pushback: 'Push back on my ideas. Ask why. Request supporting data. Do not just agree with me.',
+      grounded: 'Keep me grounded in reality. Optimistic but factual. Flag magical thinking gently.',
+      solutions: 'Always be solution-oriented. Give options and suggestions, not just problems.',
+      teach: 'Teach me along the way. Explain the why, not just the what.',
+      nudge: 'Occasionally mid-conversation: nudge me about habits I\'ve specified (water, food, movement, etc). Keep it light.',
+      spiral: 'If I start asking for psychological frameworks, identity-readings, or meaning-making about an uncertain situation instead of moving forward — name the pattern: "this looks like the analysis loop." Wait for me to confirm before going deeper. Do not generate the framework unprompted.',
+    };
+    activeToggles.forEach(([k]) => {
+      if (toggleLabels[k]) md += `- ${toggleLabels[k]}\n`;
+    });
+    md += `\n---\n\n`;
+  }
+
+  // HARD LIMITS
+  if (a.never_do || a.never_tone) {
+    md += `## Hard Limits\n\n`;
+    if (a.never_do) md += `**Never do:**\n${a.never_do}\n\n`;
+    if (a.never_tone) md += `**Never sound like:**\n${a.never_tone}\n\n`;
+    md += `---\n\n`;
+  }
+
+  md += `*Last updated: ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}. Update when major facts change.*\n`;
+
+  return md;
+}
+
+function copyOutput() {
+  const content = document.getElementById('outputContent');
+  navigator.clipboard.writeText(content.innerText).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ Copied';
+    setTimeout(() => btn.textContent = 'Copy file', 2000);
+  });
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
